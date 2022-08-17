@@ -34,7 +34,9 @@ const NoRenderBox = () => {
     )
 }
 const MoleculeBox = () => {
-    const molecule = useRecoilValue((state) => state.exampleProvider.group([]))
+    const molecule = useRecoilValue((state) =>
+        state.exampleProvider.molecule([]),
+    )
 
     return (
         <>
@@ -48,9 +50,13 @@ const MoleculeBox = () => {
 
 const AtomInMoleculeBox = () => {
     const [atomInMolecule, setAtomInMolecule] = useRecoilState((state) =>
-        state.exampleProvider.group(['exampleValue']),
+        state.exampleProvider.molecule(['exampleValue', 'exampleValueB']),
     )
-    const subAtom = () => setAtomInMolecule(10)
+    const subAtom = () =>
+        setAtomInMolecule((prev) => ({
+            exampleValue: prev.exampleValue! - 10,
+            exampleValueB: prev.exampleValueB + 'B',
+        }))
     return (
         <>
             <h2>atomInMolecule</h2>

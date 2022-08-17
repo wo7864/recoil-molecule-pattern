@@ -1,4 +1,13 @@
-import { atom, atomFamily, RecoilState, selector, selectorFamily } from 'recoil'
+import {
+    atom,
+    atomFamily,
+    RecoilState,
+    RecoilValueReadOnly,
+    selector,
+    selectorFamily,
+    SetRecoilState,
+} from 'recoil'
+import { stateTree } from './api'
 
 const exampleValue = atom({
     key: 'exampleValue',
@@ -17,44 +26,61 @@ const exampleAtomFamily = atomFamily({
     key: 'exampleatomFamily',
     default: (v: number) => v + 5,
 })
-
-const exampleProvider = {
-    exampleValue,
-    exampleValueB,
-    exampleSelector,
+export interface IProvider<> {
+    [key: string]: RecoilState<any> | RecoilValueReadOnly<any> | any
+    exampleValue: RecoilState<number>
+    exampleValueB: RecoilState<any>
+    exampleSelector: RecoilValueReadOnly<any>
+    molecule: (param: string[]) => RecoilState<IProviderValue>
 }
-type ExampleList = 'exampleValue' | 'exampleSelector'
+interface IProviderValue {
+    [key: string]: any
+    exampleValue?: number
+    exampleValueB?: string
+    exampleSelector?: number
+}
 
-const serializer = (provider: typeof exampleProvider) => {
+const serializer = (provider: Omit<IProvider, 'molecule'>) => {
     const group = selectorFamily({
-        key: 'group',
-        get: (atomList: ExampleList[] = []) => {
+        key: '_molecule',
+        get: (atomList: string[]) => {
             return ({ get }) => {
-                const result: { [str: string]: any } = {}
+                const result: IProviderValue = {}
                 if (atomList.length) {
                     Object.keys(provider).forEach((key) => {
-                        if (atomList.includes(key as ExampleList))
-                            result[key] = get(provider[key as ExampleList])
+                        if (atomList.includes(key)) {
+                            const p = provider[key]
+                            if (p) result[key] = get(p)
+                        }
                     })
-                } else
+                } else {
                     Object.keys(provider).forEach((key) => {
-                        result[key] = get(provider[key as ExampleList])
+                        const p = provider[key]
+                        if (p) result[key] = get(p)
                     })
+                }
                 return result
             }
         },
-        set: (atomList: ExampleList[]) => {
-            return ({ set }, newValue: any) => {
-                const state = provider[atomList[0]]
-                if (typeof newValue === 'number')
-                    set<number>(state as RecoilState<number>, newValue)
+        set: (atomList: string[]) => {
+            return ({ set }: { set: SetRecoilState }, newValue: any) => {
+                atomList.forEach((key) => {
+                    const state = provider[key]
+                    set<any>(state as RecoilState<any>, newValue[key])
+                })
             }
         },
     })
 
     return {
         ...provider,
-        group: group,
-    }
+        molecule: group,
+    } as IProvider
 }
-export default serializer(exampleProvider)
+const exampleProvider: IProvider = serializer({
+    exampleValue,
+    exampleValueB,
+    exampleSelector,
+})
+
+export default exampleProvider
