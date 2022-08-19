@@ -39,30 +39,39 @@ interface IProviderValue {
     exampleValueB?: string
     exampleSelector?: number
 }
-
-const serializer = (provider: Omit<IProvider, 'molecule'>) => {
+const props = {
+    exampleValue,
+    exampleValueB,
+    exampleSelector,
+}
+type Props = typeof props
+const serializer = (provider: Props) => {
     const group = selectorFamily({
         key: '_molecule',
-        get: (atomList: string[]) => {
+        get: (atomList: (keyof typeof provider)[]) => {
             return ({ get }) => {
                 const result: IProviderValue = {}
                 if (atomList.length) {
-                    Object.keys(provider).forEach((key) => {
+                    ;(
+                        Object.keys(provider) as (keyof typeof provider)[]
+                    ).forEach((key) => {
                         if (atomList.includes(key)) {
                             const p = provider[key]
-                            if (p) result[key] = get(p)
+                            if (p) result[key] = get<any>(p)
                         }
                     })
                 } else {
-                    Object.keys(provider).forEach((key) => {
+                    ;(
+                        Object.keys(provider) as (keyof typeof provider)[]
+                    ).forEach((key) => {
                         const p = provider[key]
-                        if (p) result[key] = get(p)
+                        if (p) result[key] = get<any>(p)
                     })
                 }
                 return result
             }
         },
-        set: (atomList: string[]) => {
+        set: (atomList: (keyof typeof provider)[]) => {
             return ({ set }: { set: SetRecoilState }, newValue: any) => {
                 atomList.forEach((key) => {
                     const state = provider[key]
@@ -75,9 +84,11 @@ const serializer = (provider: Omit<IProvider, 'molecule'>) => {
     return {
         ...provider,
         molecule: group,
-    } as IProvider
+    }
 }
-const exampleProvider: IProvider = serializer({
+const exampleProvider: Props & {
+    molecule: (param: (keyof typeof props)[]) => RecoilState<any>
+} = serializer({
     exampleValue,
     exampleValueB,
     exampleSelector,
