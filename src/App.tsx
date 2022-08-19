@@ -54,8 +54,8 @@ const AtomInMoleculeBox = () => {
     )
     const subAtom = () =>
         setAtomInMolecule((prev) => ({
-            exampleValue: prev.exampleValue! - 10,
-            exampleValueB: prev.exampleValueB + 'B',
+            ...prev,
+            exampleValueB: prev.exampleValueB + 'C',
         }))
     return (
         <>
