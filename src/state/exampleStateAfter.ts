@@ -7,7 +7,6 @@ import {
     selectorFamily,
     SetRecoilState,
 } from 'recoil'
-import { stateTree } from './api'
 
 const exampleValue = atom({
     key: 'exampleValue',
@@ -57,6 +56,7 @@ const serializer = (provider: Props) => {
                     ).forEach((key) => {
                         if (atomList.includes(key)) {
                             const p = provider[key]
+                            const t = result[key]
                             if (p) result[key] = get<any>(p)
                         }
                     })
